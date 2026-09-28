@@ -5,3 +5,4 @@ __pycache__/
 chroma_db/
 data/uploaded_file.*
 .DS_Store
+~$*
