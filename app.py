@@ -31,226 +31,153 @@ from utils import (
 load_dotenv()
 
 st.set_page_config(
-    page_title="Action Extractor",
+    page_title="Document Action Extractor",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Comprehensive Apple Minimal Stylesheet (Light, Cohesive, Uncluttered)
+# Dark Slate Professional Theme (No Gradients, No Purple, No Slop)
 st.markdown(
     """
     <style>
-    /* Global Canvas & Base Typography */
+    /* Base typography & canvas */
     html, body, [data-testid="stAppViewContainer"], .main {
-        background-color: #f5f5f7 !important;
-        color: #1d1d1f !important;
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+        background-color: #0e1117 !important;
+        color: #f0f2f6 !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
     }
 
-    /* Streamlit Top Header Bar */
-    header[data-testid="stHeader"] {
-        background-color: #f5f5f7 !important;
-        border-bottom: 1px solid #d2d2d7 !important;
-    }
-
-    /* Sidebar Styling */
     [data-testid="stSidebar"] {
-        background-color: #ffffff !important;
-        border-right: 1px solid #d2d2d7 !important;
-    }
-    [data-testid="stSidebar"] * {
-        color: #1d1d1f !important;
+        background-color: #161b22 !important;
+        border-right: 1px solid #30363d !important;
     }
 
-    /* Main Container Padding */
-    .block-container {
-        padding-top: 2rem !important;
-        padding-bottom: 3rem !important;
-        max-width: 1000px !important;
-    }
-
-    /* Headings */
-    h1 {
-        font-size: 1.85rem !important;
+    h1, h2, h3, h4 {
+        color: #f0f2f6 !important;
         font-weight: 600 !important;
-        color: #1d1d1f !important;
-        letter-spacing: -0.02em !important;
-        margin-bottom: 0.2rem !important;
-    }
-
-    h2, h3 {
-        font-weight: 600 !important;
-        color: #1d1d1f !important;
         letter-spacing: -0.01em !important;
     }
 
-    .subtitle {
-        color: #6e6e73 !important;
-        font-size: 1rem !important;
-        margin-bottom: 1.75rem !important;
-        line-height: 1.4 !important;
+    p, span, label {
+        color: #c9d1d9 !important;
     }
 
-    /* Force Light Background on All Inputs & Uploaders */
-    div[data-baseweb="input"],
-    div[data-baseweb="base-input"],
-    div[data-baseweb="textarea"] {
-        background-color: #ffffff !important;
-        border: 1px solid #d2d2d7 !important;
-        border-radius: 6px !important;
-        color: #1d1d1f !important;
-    }
-
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea {
-        background-color: #ffffff !important;
-        color: #1d1d1f !important;
-        font-size: 0.95rem !important;
-    }
-
-    /* Dropdowns & Selectboxes */
-    div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        border: 1px solid #d2d2d7 !important;
-        border-radius: 6px !important;
-        color: #1d1d1f !important;
-    }
-
-    div[data-baseweb="select"] * {
-        color: #1d1d1f !important;
-    }
-
-    /* Native File Uploader - Light Styling */
-    [data-testid="stFileUploader"] {
-        background-color: #ffffff !important;
-        border: 1px solid #d2d2d7 !important;
-        border-radius: 8px !important;
-        padding: 12px !important;
-    }
-
-    [data-testid="stFileUploader"] section {
-        background-color: #ffffff !important;
-        border: 1px dashed #d2d2d7 !important;
-        border-radius: 6px !important;
-    }
-
-    [data-testid="stFileUploader"] section * {
-        color: #1d1d1f !important;
-    }
-
-    [data-testid="stFileUploader"] button {
-        background-color: #ffffff !important;
-        color: #1d1d1f !important;
-        border: 1px solid #d2d2d7 !important;
-        border-radius: 6px !important;
-        font-weight: 500 !important;
-    }
-
-    /* Primary Action Buttons */
+    /* Standard solid primary button (no pill shapes, no harsh gradients) */
     button[kind="primary"] {
-        background-color: #0071e3 !important;
+        background-color: #238636 !important;
         color: #ffffff !important;
+        border: 1px solid rgba(240, 246, 252, 0.1) !important;
         border-radius: 6px !important;
-        border: none !important;
         font-weight: 500 !important;
-        padding: 0.55rem 1.25rem !important;
+        padding: 0.5rem 1.2rem !important;
     }
 
     button[kind="primary"]:hover {
-        background-color: #0077ed !important;
+        background-color: #2ea043 !important;
     }
 
-    /* Secondary Buttons */
     button[kind="secondary"] {
-        background-color: #ffffff !important;
-        color: #1d1d1f !important;
-        border: 1px solid #d2d2d7 !important;
+        background-color: #21262d !important;
+        color: #c9d1d9 !important;
+        border: 1px solid #30363d !important;
         border-radius: 6px !important;
         font-weight: 500 !important;
     }
 
     button[kind="secondary"]:hover {
-        background-color: #f5f5f7 !important;
-        border-color: #86868b !important;
+        background-color: #30363d !important;
+        color: #ffffff !important;
     }
 
-    /* Content Cards */
-    .apple-card {
-        background-color: #ffffff;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        padding: 18px 22px;
+    /* Result Task Cards (Dark Slate, Clean Border, No Left Stripes) */
+    .task-card {
+        background-color: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 6px;
+        padding: 16px 20px;
         margin-bottom: 12px;
     }
 
-    .apple-quote {
-        background-color: #fbfbfd;
-        border: 1px solid #e5e5ea;
-        border-radius: 6px;
+    .task-title {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #f0f2f6;
+        line-height: 1.4;
+        margin-bottom: 6px;
+    }
+
+    .task-meta {
+        font-size: 0.9rem;
+        color: #8b949e;
+        margin-bottom: 10px;
+    }
+
+    .task-meta strong {
+        color: #c9d1d9;
+    }
+
+    .source-box {
+        background-color: #0d1117;
+        border: 1px solid #21262d;
+        border-radius: 4px;
         padding: 10px 14px;
-        color: #424245;
+        color: #8b949e;
         font-size: 0.88rem;
         line-height: 1.5;
-        margin-top: 10px;
+        word-wrap: break-word;
     }
 
-    /* Priority Badges */
-    .priority-badge-high {
-        background-color: #fdf2f2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
+    .source-box strong {
+        color: #c9d1d9;
+    }
+
+    /* Clean priority tags */
+    .badge-high {
+        background-color: #3d1b1b;
+        color: #ff7b72;
+        border: 1px solid #6e2525;
+        font-size: 0.75rem;
         font-weight: 600;
-        font-size: 0.72rem;
-        padding: 2px 7px;
+        padding: 2px 8px;
         border-radius: 4px;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.5px;
     }
 
-    .priority-badge-medium {
-        background-color: #fffbeb;
-        color: #b45309;
-        border: 1px solid #fde68a;
+    .badge-medium {
+        background-color: #3b2a1a;
+        color: #e3b341;
+        border: 1px solid #6b4c1e;
+        font-size: 0.75rem;
         font-weight: 600;
-        font-size: 0.72rem;
-        padding: 2px 7px;
+        padding: 2px 8px;
         border-radius: 4px;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.5px;
     }
 
-    .priority-badge-low {
-        background-color: #f0fdf4;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
+    .badge-low {
+        background-color: #1c2b1d;
+        color: #7ee787;
+        border: 1px solid #234e26;
+        font-size: 0.75rem;
         font-weight: 600;
-        font-size: 0.72rem;
-        padding: 2px 7px;
+        padding: 2px 8px;
         border-radius: 4px;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
-    }
-
-    .meta-item {
-        color: #6e6e73;
-        font-size: 0.88rem;
-    }
-
-    .meta-item strong {
-        color: #1d1d1f;
-        font-weight: 500;
+        letter-spacing: 0.5px;
     }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
-# ----------------- SIDEBAR -----------------
+# ----------------- SIDEBAR CONFIGURATION -----------------
 with st.sidebar:
     st.markdown("### Settings")
 
     llm_provider_choice = st.radio(
-        "Model Provider",
+        "LLM Provider",
         options=["Local Ollama", "Google Gemini"],
         index=0,
     )
@@ -259,10 +186,10 @@ with st.sidebar:
     if llm_provider == "gemini":
         env_api_key = os.getenv("GOOGLE_API_KEY", "")
         api_key_input = st.text_input(
-            "API Key",
+            "Google API Key",
             value=st.session_state.get("api_key", env_api_key),
             type="password",
-            placeholder="Enter Google API key",
+            placeholder="Enter API key",
         )
         if api_key_input:
             st.session_state["api_key"] = api_key_input
@@ -273,7 +200,7 @@ with st.sidebar:
             index=0,
         )
     else:
-        st.caption("Running locally via Ollama.")
+        st.caption("Running locally on device via Ollama.")
         llm_model = st.selectbox(
             "Ollama Model",
             options=["huihui_ai/qwen3.5-abliterated:9b", "qwen2.5:latest", "llama3:latest"],
@@ -299,11 +226,11 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.caption("Action Item Extractor v2.0")
+    st.caption("Document Action Extractor v2.0")
 
-# ----------------- MAIN VIEW -----------------
-st.title("Action Item Extractor")
-st.markdown("<div class='subtitle'>Upload meeting minutes, transcripts, or specifications to extract assigned tasks, owners, and due dates.</div>", unsafe_allow_html=True)
+# ----------------- MAIN INTERFACE -----------------
+st.title("Document Action Extractor")
+st.markdown("Extract action items, assignees, deadlines, and priorities from unstructured documents.")
 
 # 1. Document Upload
 st.markdown("#### 1. Document")
@@ -349,9 +276,9 @@ if uploaded_file is not None:
                 st.error(str(e))
 
 if st.session_state.get("raw_document_text"):
-    with st.expander("Preview Extracted Document Text"):
+    with st.expander("Document Text Preview"):
         st.text_area(
-            "Raw Text",
+            "Raw Extracted Text",
             value=st.session_state["raw_document_text"],
             height=140,
             disabled=True,
@@ -362,12 +289,26 @@ st.markdown("<br>", unsafe_allow_html=True)
 
 # 2. Extract Tasks
 st.markdown("#### 2. Extraction Query")
+
+# Presets
+col_p1, col_p2, col_p3, col_p4 = st.columns(4)
+preset_selected = None
+if col_p1.button("All Action Items", use_container_width=True):
+    preset_selected = "Extract all action items, owners, deadlines, and priority levels."
+if col_p2.button("High Priority Only", use_container_width=True):
+    preset_selected = "Extract only critical and high priority action items."
+if col_p3.button("Upcoming Deadlines", use_container_width=True):
+    preset_selected = "Find all action items with specified deadlines or dates."
+if col_p4.button("Assigned Tasks", use_container_width=True):
+    preset_selected = "Extract all tasks assigned to specific individuals or teams."
+
 col_query, col_btn = st.columns([4, 1])
 
 with col_query:
+    default_q = preset_selected or "Extract all action items, owners, deadlines, and priority levels."
     query_input = st.text_input(
         "Query",
-        value="Extract all action items, owners, deadlines, and priority levels.",
+        value=default_q,
         placeholder="e.g., Extract all high priority tasks",
         label_visibility="collapsed",
     )
@@ -408,7 +349,7 @@ if "extracted_items" in st.session_state:
     else:
         st.markdown(f"#### 3. Action Items ({len(items)} found)")
 
-        # Filter & Export Toolbar
+        # Toolbar: Filter by priority & Search & Exports
         col_filter, col_search, col_csv, col_json = st.columns([2, 3, 1, 1])
 
         with col_filter:
@@ -463,8 +404,8 @@ if "extracted_items" in st.session_state:
             for idx, item in enumerate(filtered_items, 1):
                 p_label = get_priority_label(item.priority)
                 badge_class = (
-                    "priority-badge-high" if p_label == "High"
-                    else ("priority-badge-medium" if p_label == "Medium" else "priority-badge-low")
+                    "badge-high" if p_label == "High"
+                    else ("badge-medium" if p_label == "Medium" else "badge-low")
                 )
 
                 owner_text = item.owner if item.owner else "Unassigned"
@@ -472,22 +413,22 @@ if "extracted_items" in st.session_state:
 
                 st.markdown(
                     f"""
-                    <div class="apple-card">
+                    <div class="task-card">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                            <div style="font-size: 1.02rem; font-weight: 600; color: #1d1d1f; line-height: 1.4;">
+                            <div class="task-title">
                                 {idx}. {item.task}
                             </div>
                             <span class="{badge_class}">
                                 {p_label}
                             </span>
                         </div>
-                        <div style="margin-bottom: 8px;">
-                            <span class="meta-item">Owner: <strong>{owner_text}</strong></span>
+                        <div class="task-meta">
+                            <span>Owner: <strong>{owner_text}</strong></span>
                             &nbsp;&nbsp;&nbsp;&nbsp;
-                            <span class="meta-item">Due: <strong>{deadline_text}</strong></span>
+                            <span>Due: <strong>{deadline_text}</strong></span>
                         </div>
-                        <div class="apple-quote">
-                            <strong>Source:</strong> "{item.source}"
+                        <div class="source-box">
+                            <strong>Source Context:</strong> "{item.source}"
                         </div>
                     </div>
                     """,
