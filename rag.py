@@ -3,13 +3,75 @@ import re
 from typing import List, Optional
 import chromadb
 from dotenv import load_dotenv
+import json
+import urllib.request
+import urllib.error
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_community.llms import Ollama
 from ingest import DEFAULT_DB_PATH, get_embedding_function
 from models import ActionItem, ActionItemList
 from utils import clean_json_markdown
 
 load_dotenv()
+
+
+class OllamaDirectLLM:
+    """
+    Direct client for local Ollama.
+    Passes think=False to disable verbose chain-of-thought traces on reasoning
+    models (like Qwen 3.5 / DeepSeek-R1), enabling fast, direct JSON extraction
+    and preventing empty response / token-drop issues.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        base_url: str = "http://127.0.0.1:11434",
+        temperature: float = 0.0,
+        timeout: int = 120,
+    ):
+        self.model = model
+        self.base_url = base_url.rstrip("/")
+        self.temperature = temperature
+        self.timeout = timeout
+
+    def invoke(self, prompt: str) -> str:
+        payload = {
+            "model": self.model,
+            "prompt": prompt,
+            "stream": False,
+            "think": False,
+            "options": {
+                "temperature": self.temperature,
+            },
+        }
+        url = f"{self.base_url}/api/generate"
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                return data.get("response", "")
+        except urllib.error.HTTPError as e:
+            # If think parameter is not recognized by older Ollama versions, retry without it
+            try:
+                del payload["think"]
+                fallback_req = urllib.request.Request(
+                    url,
+                    data=json.dumps(payload).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                )
+                with urllib.request.urlopen(fallback_req, timeout=self.timeout) as fallback_resp:
+                    data = json.loads(fallback_resp.read().decode("utf-8"))
+                    return data.get("response", "")
+            except Exception:
+                raise e
+        except urllib.error.URLError as e:
+            raise ConnectionError(
+                f"Cannot connect to Ollama at {self.base_url}. Please ensure Ollama is running."
+            ) from e
 
 
 def get_llm(
@@ -31,10 +93,10 @@ def get_llm(
         LLM instance.
     """
     if provider == "ollama":
-        return Ollama(
+        return OllamaDirectLLM(
             model=model,
             temperature=temperature,
-            base_url="http://localhost:11434",
+            base_url="http://127.0.0.1:11434",
         )
     else:
         effective_api_key = api_key or os.getenv("GOOGLE_API_KEY")
