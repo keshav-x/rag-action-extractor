@@ -52,6 +52,12 @@ st.markdown(
         border-right: 1px solid #30363d !important;
     }
 
+    /* Hide Streamlit toolbar, header, promotional banners, agent toasts, and badges */
+    #MainMenu, header, footer, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"], [data-testid="stToast"], [data-testid="stNotification"], [data-testid="stFloatingContainer"], div[class*="toast"], div[class*="Toast"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
     h1, h2, h3, h4 {
         color: #f0f2f6 !important;
         font-weight: 600 !important;
