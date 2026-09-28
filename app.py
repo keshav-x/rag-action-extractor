@@ -226,7 +226,7 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.caption("Document Action Extractor v2.0")
+    st.caption("Document Action Extractor")
 
 # ----------------- MAIN INTERFACE -----------------
 st.title("Document Action Extractor")
