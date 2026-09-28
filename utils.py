@@ -2,7 +2,7 @@ import json
 import re
 from typing import List, Optional
 import pandas as pd
-from models import ActionItem
+from models import ActionItem, ActionItemList
 
 
 def clean_json_markdown(raw_text: str) -> str:
@@ -11,10 +11,108 @@ def clean_json_markdown(raw_text: str) -> str:
     to ensure valid JSON parsing.
     """
     text = raw_text.strip()
+    # Match markdown fence anywhere in the text
+    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", text, re.IGNORECASE)
+    if fence_match:
+        return fence_match.group(1).strip()
     if text.startswith("```"):
         text = re.sub(r"^```[a-zA-Z]*\n?", "", text)
         text = re.sub(r"\n?```$", "", text).strip()
     return text
+
+
+def parse_action_items(raw_text: str) -> List[ActionItem]:
+    """
+    Resilient parser that extracts action items from various LLM response formats:
+    - Standard ActionItemList JSON: {"action_items": [...]}
+    - Direct JSON Array: [...]
+    - Single JSON object: {"task": ...}
+    - Markdown-fenced JSON blocks
+    - Plain text task lists (fallback)
+    Never crashes on empty strings or malformed syntax.
+    """
+    if not raw_text or not raw_text.strip():
+        return []
+
+    cleaned = clean_json_markdown(raw_text)
+
+    # 1. Try candidates for JSON parsing
+    candidates = []
+
+    # Look for { ... }
+    obj_match = re.search(r"\{[\s\S]*\}", cleaned)
+    if obj_match:
+        candidates.append(obj_match.group(0))
+
+    # Look for [ ... ]
+    arr_match = re.search(r"\[[\s\S]*\]", cleaned)
+    if arr_match:
+        candidates.append(arr_match.group(0))
+
+    candidates.append(cleaned)
+
+    for cand in candidates:
+        if not cand.strip():
+            continue
+        try:
+            data = json.loads(cand)
+            if isinstance(data, dict):
+                # Format: {"action_items": [...]}
+                if "action_items" in data and isinstance(data["action_items"], list):
+                    items = []
+                    for it in data["action_items"]:
+                        if isinstance(it, dict) and "task" in it and it["task"]:
+                            items.append(ActionItem(
+                                task=str(it.get("task", "")).strip(),
+                                owner=str(it.get("owner", "")).strip() if it.get("owner") else None,
+                                deadline=str(it.get("deadline", "")).strip() if it.get("deadline") else None,
+                                priority=str(it.get("priority", "")).strip() if it.get("priority") else None,
+                                source=str(it.get("source", "")).strip(),
+                            ))
+                    if items:
+                        return items
+                # Format: Single object {"task": ...}
+                elif "task" in data and data["task"]:
+                    return [ActionItem(
+                        task=str(data.get("task", "")).strip(),
+                        owner=str(data.get("owner", "")).strip() if data.get("owner") else None,
+                        deadline=str(data.get("deadline", "")).strip() if data.get("deadline") else None,
+                        priority=str(data.get("priority", "")).strip() if data.get("priority") else None,
+                        source=str(data.get("source", "")).strip(),
+                    )]
+            # Format: Array [{"task": ...}]
+            elif isinstance(data, list):
+                items = []
+                for it in data:
+                    if isinstance(it, dict) and "task" in it and it["task"]:
+                        items.append(ActionItem(
+                            task=str(it.get("task", "")).strip(),
+                            owner=str(it.get("owner", "")).strip() if it.get("owner") else None,
+                            deadline=str(it.get("deadline", "")).strip() if it.get("deadline") else None,
+                            priority=str(it.get("priority", "")).strip() if it.get("priority") else None,
+                            source=str(it.get("source", "")).strip(),
+                        ))
+                if items:
+                    return items
+        except Exception:
+            continue
+
+    # 2. Fallback: Parse numbered or bulleted plain text lines if JSON parsing failed
+    fallback_items = []
+    for line in raw_text.splitlines():
+        line_clean = line.strip()
+        if re.match(r"^(\d+[\.\)]|\-|\*)\s+", line_clean):
+            task_text = re.sub(r"^(\d+[\.\)]|\-|\*)\s+", "", line_clean).strip()
+            if len(task_text) > 8:
+                fallback_items.append(ActionItem(
+                    task=task_text,
+                    owner=None,
+                    deadline=None,
+                    priority="Medium",
+                    source=task_text,
+                ))
+
+    return fallback_items
 
 
 def get_priority_label(priority: Optional[str]) -> str:
@@ -33,7 +131,6 @@ def get_priority_label(priority: Optional[str]) -> str:
     return priority.strip().capitalize()
 
 
-# Backward compatibility alias
 def get_priority_emoji(priority: Optional[str]) -> str:
     return get_priority_label(priority)
 

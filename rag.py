@@ -187,19 +187,18 @@ Rules:
         else:
             raw_text = str(response)
 
-        cleaned_json = clean_json_markdown(raw_text)
-
-        # Extract JSON object substring if model returned extra text
-        json_match = re.search(r"\{.*\}", cleaned_json, re.DOTALL)
-        if json_match:
-            cleaned_json = json_match.group(0)
-
-        parsed = ActionItemList.model_validate_json(cleaned_json)
-        return parsed.action_items
+        from utils import parse_action_items
+        items = parse_action_items(raw_text)
+        return items
 
     except Exception as e:
         print(f"Error during action extraction: {e}")
-        raise e
+        err_str = str(e)
+        if "API_KEY" in err_str or "403" in err_str or "unregistered" in err_str:
+            raise ValueError("Google API key is missing or invalid. Please check your key in the sidebar.")
+        elif "11434" in err_str or "refused" in err_str:
+            raise ValueError("Cannot connect to Ollama. Please ensure Ollama is running at http://localhost:11434.")
+        raise ValueError(f"Action extraction encountered an issue: {err_str}")
 
 
 if __name__ == "__main__":
